@@ -68,42 +68,33 @@ const FormCreation = ({ handleFormAdd, formsList }) => {
     const { id } = useParams();
 
     useEffect(() => {
-        (async () => {
+        const fetchForm = async () => {
             if (id) {
-                const existingForm = await axios.get(`/form/${id}`);
-                if (existingForm[0]) {
-                    setFormData(existingForm[0]);
-                    setIsEditMode(true);
+                try {
+                    const response = await axios.get(`/form/${id}`);
+                    if (response.data) {
+                        setFormData(response.data);
+                        setIsEditMode(true);
+                    }
+                } catch (error) {
+                    console.error("Error fetching form data:", error);
                 }
             }
-        })();
-    }, [formsList, id]);
+        };
+
+        fetchForm();
+    }, [id]);
+
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (isEdit) {
-                await axios.put(`/form/${id}/edit`, formData)
-                    .then((response) => {
-                        console.log(response.data);
-                        navigate('/');
-                    })
-                    .catch((error) => {
-                        console.error(error.response?.data?.msg || error.message);
-                    });
-            } else {
-                await axios.post('/form/create', formData)
-                    .then((response) => {
-                        console.log(response.data);
-                        navigate('/');
-                    })
-                    .catch((error) => {
-                        console.error(error.response?.data?.msg || error.message);
-                    });
-            }
+            const response = await axios.post('/form/create', formData);
+            console.log(response.data);
+            navigate('/')
         } catch (error) {
-            console.error('Error caught in form submission', error);
+            console.error("Error submitting form:", error);
         }
     };
 
@@ -111,18 +102,16 @@ const FormCreation = ({ handleFormAdd, formsList }) => {
     const handleFormUpdate = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.put(`/form/${id}/edit`, formData)
-
-            const data = await response.data;
-
-            if (response.ok) {
-                console.log('Form updated successfully:', data);
-                navigate('/');
-            } else {
-                console.error('Error updating form:', data);
-            }
+            await axios.put(`/form/${id}/edit`, formData)
+                .then((response) => {
+                    console.log(response.data);
+                    navigate('/');
+                })
+                .catch((error) => {
+                    console.error(error.response?.data?.msg || error.message);
+                });
         } catch (error) {
-            console.error('Network error:', error);
+            console.error('Error caught in form submission', error);
         }
     };
 
@@ -332,7 +321,7 @@ const FormCreation = ({ handleFormAdd, formsList }) => {
                                 <Box>
                                     <TextField
                                         variant="standard"
-                                        value={fieldsValue?.value}
+                                        value={fieldsValue?.title}
                                         label="Title"
                                         onChange={(event) =>
                                             handleChange("value", event)
@@ -341,7 +330,7 @@ const FormCreation = ({ handleFormAdd, formsList }) => {
                                     />
                                     <TextField
                                         variant="standard"
-                                        value={fieldsValue?.label || ""}
+                                        value={fieldsValue?.input_label || ""}
                                         label="Placeholder"
                                         onChange={(event) =>
                                             handleChange("label", event)
@@ -363,7 +352,7 @@ const FormCreation = ({ handleFormAdd, formsList }) => {
                     if (isEditMode) {
                         handleFormUpdate(e);
                     } else {
-                        navigate('/')
+                        handleSubmit(e);
                     }
                 }}
                 sx={{ mt: 2 }}
